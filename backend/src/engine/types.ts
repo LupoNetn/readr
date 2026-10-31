@@ -8,6 +8,26 @@ export interface DocumentChunk {
     createdAt: number;
 }
 
+export interface DocumentMeta {
+    id: string;
+    filename: string;
+    byteSize: number;
+    extension: string;
+    uploadedAt: number;
+    totalChunks: number;
+    preview: string; // first 120 characters snippet
+}
+
+
+export interface ChatHistoryItem {
+    id: string;
+    question: string;
+    answer: string;
+    found: boolean;
+    confidenceScore?: number;
+    sourceFilename?: string;
+    timestamp: number;
+}
 
 export interface SearchResult {
     found: boolean;
@@ -17,6 +37,6 @@ export interface SearchResult {
         chunkIndex: number;
         text: string;
         matchedTokens: string[];
-    }
+    };
     message?: string;
 }
