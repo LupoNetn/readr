@@ -3,7 +3,7 @@ import type { Request, Response } from 'express'
 import dotenv from 'dotenv'
 import cors from 'cors'
 import { createMcpServer } from './mcp/mcp.js'
-import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp'
+import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js'
 
 dotenv.config()
 
@@ -21,7 +21,7 @@ app.get("/health", async (req: Request, res: Response) => {
     })
 })
 
-app.all("mcp", async (req: Request, res: Response) => {
+app.all("/mcp", async (req: Request, res: Response) => {
     const server = createMcpServer()
     const transport = new StreamableHTTPServerTransport({
         sessionIdGenerator: undefined

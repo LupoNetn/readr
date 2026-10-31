@@ -16,7 +16,7 @@ export interface SearchResult {
         filename: string;
         chunkIndex: number;
         text: string;
-        matchdTokens: string[];
+        matchedTokens: string[];
     }
     message?: string;
 }
