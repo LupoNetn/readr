@@ -15,11 +15,8 @@ export function tokenize(text: string): string[] {
     return rawWords.filter(word => !STOP_WORDS.has(word) && word.length > 1);
 }
 
-/**
- * Splits extracted document text into clean, searchable paragraph or sentence chunks.
- */
+
 export function chunkText(text: string, filename: string, documentId: string): DocumentChunk[] {
-    // 1. Split raw text by double line breaks (paragraphs)
     const rawParagraphs = text
         .split(/\r?\n\s*\r?\n/)
         .map(p => p.trim())
@@ -28,34 +25,37 @@ export function chunkText(text: string, filename: string, documentId: string): D
     const chunks: DocumentChunk[] = [];
 
     rawParagraphs.forEach((paragraph) => {
-        // 2. If a paragraph is unusually long (> 600 chars), split by sentences
         if (paragraph.length > 600) {
             const sentences = paragraph.split(/(?<=[.?!])\s+/);
             sentences.forEach((sentence) => {
                 const trimmed = sentence.trim();
-                if (trimmed.length > 10) {
+                const tokens = tokenize(trimmed);
+                // Keep only if it contains real search keywords
+                if (tokens.length >= 1) {
                     chunks.push({
                         id: `${documentId}-chunk-${chunks.length}`,
                         documentId,
                         filename,
                         chunkIndex: chunks.length,
                         text: trimmed,
-                        tokens: tokenize(trimmed),
+                        tokens,
                         createdAt: Date.now()
                     });
                 }
             });
         } else {
-            // Keep normal sized paragraphs intact
-            chunks.push({
-                id: `${documentId}-chunk-${chunks.length}`,
-                documentId,
-                filename,
-                chunkIndex: chunks.length,
-                text: paragraph,
-                tokens: tokenize(paragraph),
-                createdAt: Date.now()
-            });
+            const tokens = tokenize(paragraph);
+            if (tokens.length >= 1) {
+                chunks.push({
+                    id: `${documentId}-chunk-${chunks.length}`,
+                    documentId,
+                    filename,
+                    chunkIndex: chunks.length,
+                    text: paragraph,
+                    tokens,
+                    createdAt: Date.now()
+                });
+            }
         }
     });
 
