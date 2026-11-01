@@ -1,145 +1,95 @@
 # readr 📖
 
-> A deterministic, non-AI document ingestion & extractive search engine powered by the **Model Context Protocol (MCP)** and **BM25 ranking**.
+> A pure, deterministic document ingestion & search engine powered by the **Model Context Protocol (MCP)** and **BM25 ranking**.
 
-`readr` ingests real documents (`.pdf`, `.docx`, `.csv`, `.txt`, `.md`, `.json`), extracts and tokenizes them into structured semantic chunks, stores them in memory with disk persistence, and answers queries strictly from source material. If a query does not have verifiable backing in the documents, the system deterministically responds with `"nothing found"`.
+`readr` is a **100% Pure MCP Server**. It exposes tools and resources for ingesting real files (`.pdf`, `.docx`, `.csv`, `.txt`, `.md`, `.json`), chunking them along semantic boundaries, and performing deterministic passage retrieval.
 
----
-
-## 🌟 Key Features
-
-* **Zero AI / Zero LLM / Zero DB:** Pure deterministic mathematics and algorithms. 100% predictable, zero hallucination risk, zero API token costs.
-* **Multi-Format Parsing:** Ingests raw binary files (`.pdf`, `.docx`, `.csv`, `.txt`, `.md`, `.json`) directly via multipart uploads.
-* **Semantic Paragraph & Sentence Chunking:** Chops documents along natural reading boundaries while filtering noise and orphan punctuation.
-* **Pre-Computed Tokenization:** Normalizes text, strips punctuation, and removes stopwords during ingestion for sub-millisecond retrieval.
-* **BM25 Search Algorithm:** Uses the industry-standard Best Matching 25 relevance algorithm (the math powering Elasticsearch and SQLite FTS5) with strict confidence thresholding.
-* **MCP Streamable HTTP Transport:** Full support for Model Context Protocol over modern Streamable HTTP (`/mcp`), enabling real-time streaming progress notifications.
-* **Memory Page & Chat History Ready:** Built-in persistence for document metadata (for frontend dashboard cards) and query history.
+Zero AI. Zero LLM hallucination risk. Zero database overhead.
 
 ---
 
-## 🏗️ Architecture
+## 🌟 MCP Architecture Overview
 
-```text
-[ Client / Frontend / Inspector ]
-         │                  │
-         │ POST /upload     │ POST /mcp (JSON-RPC)
-         ▼                  ▼
-┌───────────────────┐  ┌───────────────────────────────────┐
-│ Express Server    │  │ MCP Protocol Layer                │
-│ (Multer Uploads)  │  │ (StreamableHTTPServerTransport)   │
-└────────┬──────────┘  └─────────────────┬─────────────────┘
-         │                               │
-         ▼                               ▼
-┌───────────────────┐  ┌───────────────────────────────────┐
-│ File Parsers      │  │ MCP Tools                         │
-│ (pdf, docx, csv)  │  │ (ask_document, document_stats)    │
-└────────┬──────────┘  └─────────────────┬─────────────────┘
-         │                               │
-         ▼                               ▼
-┌──────────────────────────────────────────────────────────┐
-│ Search & Storage Engine                                  │
-│  ├─ Chunker & Tokenizer (Semantic sentence splitting)   │
-│  ├─ BM25 Search Engine  (IDF calculation & ranking)      │
-│  └─ In-Memory Store     (Auto-persisted to store.json)   │
-└──────────────────────────────────────────────────────────┘
-```
+All interactions flow exclusively through the Model Context Protocol:
+
+### 🛠️ Tools
+
+- **`ingest_document`**: Parses and indexes documents from a **Base64 string** (web clients) or **local file path** (desktop/CLI).
+- **`ask_document`**: Searches indexed chunks using the BM25 algorithm. Streams progress notifications and returns the exact matching source sentence, or `"nothing found"`.
+- **`delete_document`**: Purges a document and all its chunks from memory and disk.
+- **`document_stats`**: Returns real-time counts of indexed documents, chunks, and history records.
+- **`ping`**: Protocol health and responsiveness check.
+
+### 📚 Resources (State & Memory)
+
+- **`readr://documents`**: Live list of all indexed documents (powers the frontend **Memory Page**).
+- **`readr://history`**: Rolling log of all past questions, answers, and confidence scores (powers the **Chat History**).
 
 ---
 
-## 📁 Project Structure
+## 📁 Clean Modular Structure
 
 ```text
 readr/
-├── backend/                       # Node.js + Express + MCP TypeScript Server
+├── backend/
 │   ├── src/
-│   │   ├── parsers/               # File extraction layer
-│   │   │   └── index.ts           # PDFParse, Mammoth, PapaParse dispatcher
+│   │   ├── mcp/
+│   │   │   ├── server.ts             # Central MCP server initializer
+│   │   │   ├── tools/                # Isolated tool handlers
+│   │   │   │   ├── ingest.ts         # Ingestion (PDF, DOCX, CSV, TXT)
+│   │   │   │   ├── search.ts         # BM25 Q&A search
+│   │   │   │   ├── delete.ts         # Document deletion
+│   │   │   │   └── stats.ts          # System stats & ping
+│   │   │   └── resources/            # Native MCP resources
+│   │   │       ├── documents.ts      # readr://documents (Memory Page)
+│   │   │       └── history.ts        # readr://history (Chat History)
 │   │   │
-│   │   ├── engine/                # Core search & storage logic
-│   │   │   ├── types.ts           # Shared interfaces (DocumentChunk, DocumentMeta)
-│   │   │   ├── chunker.ts         # Tokenizer and paragraph/sentence chunker
-│   │   │   ├── store.ts           # RAM storage + disk persistence
-│   │   │   └── search.ts          # BM25 deterministic ranking algorithm
+│   │   ├── parsers/                  # Format extraction layer
+│   │   │   └── index.ts              # PDFParse, Mammoth, PapaParse
 │   │   │
-│   │   ├── mcp/                   # Model Context Protocol layer
-│   │   │   └── mcp.ts             # McpServer instance & tool definitions
+│   │   ├── engine/                   # Core search & memory logic
+│   │   │   ├── types.ts              # Data contracts
+│   │   │   ├── chunker.ts            # Semantic chunking & tokenization
+│   │   │   ├── store.ts              # RAM store with auto-disk persistence
+│   │   │   └── search.ts             # Deterministic BM25 ranking algorithm
 │   │   │
-│   │   └── index.ts               # Express entrypoint & HTTP routes
+│   │   └── index.ts                  # Pure MCP transport runner (~40 lines)
 │   │
 │   ├── data/
-│   │   └── store.json             # Auto-saved chunks, doc metadata & history
+│   │   └── store.json                # Auto-saved state
 │   ├── package.json
 │   └── tsconfig.json
 │
-└── frontend/                      # Standalone client application
+└── frontend/                         # Standalone MCP Client UI
 ```
 
 ---
 
 ## 🚀 Getting Started
 
-### Prerequisites
-* **Node.js**: v20+ (recommended v22+)
-* **npm**: v10+
+### 1. Install & Run
 
-### Installation
+```bash
+cd backend
+npm install
+npm run dev
+```
 
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/your-username/readr.git
-   cd readr/backend
-   ```
+The server starts at `http://localhost:3030/mcp`.
 
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
-
-3. Start development server (with hot reload):
-   ```bash
-   npm run dev
-   ```
-
-The server will be active at `http://localhost:3030`.
-
----
-
-## 📡 API & MCP Specifications
-
-### HTTP Endpoints
-
-| Method | Endpoint | Description |
-| :--- | :--- | :--- |
-| `GET` | `/health` | Server health check and total chunk count. |
-| `POST` | `/upload` | Multipart file upload (`key: file`). Parses and indexes documents. |
-| `GET` | `/documents` | Returns all uploaded document metadata (powers the **Memory Page**). |
-| `GET` | `/history` | Returns query history (powers the **Chat History**). |
-| `ALL` | `/mcp` | MCP Streamable HTTP transport endpoint. |
-
-### MCP Tools
-
-* **`ask_document`**: Searches indexed chunks for the exact source excerpt that answers the user question. Returns `{ status: "found", sourceText: "...", confidenceScore: ... }` or `"nothing found"`.
-* **`document_stats`**: Returns statistics on total chunks, document count, and file lists.
-* **`ping`**: Health and readiness check.
-
----
-
-## 🔍 Testing with MCP Inspector
-
-You can test and inspect the MCP server in isolation using the official MCP Inspector:
+### 2. Inspect with MCP Inspector
 
 ```bash
 npx @modelcontextprotocol/inspector
 ```
 
-1. Open the inspector in your browser (defaults to `http://localhost:5173`).
-2. Set transport type to **Streamable HTTP**.
-3. Point to `http://localhost:3030/mcp`.
-4. Run `document_stats` or execute `ask_document` with questions against your uploaded documents.
+- **Transport:** Streamable HTTP
+- **URL:** `http://localhost:3030/mcp`
+
+You will see all tools and resources populated in the inspector UI!
 
 ---
 
 ## 📄 License
-MIT
 
+MIT
