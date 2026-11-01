@@ -39,3 +39,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# architecture documentation (gitignored)
+ARCHITECTURE_DEEP_DIVE.md
