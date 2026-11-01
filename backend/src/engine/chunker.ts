@@ -18,7 +18,7 @@ export function tokenize(text: string): string[] {
 
 export function chunkText(text: string, filename: string, documentId: string): DocumentChunk[] {
     const rawParagraphs = text
-        .split(/\r?\n\s*\r?\n/)
+        .split(/\r?\n+/)
         .map(p => p.trim())
         .filter(p => p.length > 0);
 

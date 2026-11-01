@@ -78,10 +78,12 @@ export function searchDocument(question: string): SearchResult {
     }
 
     // 5. STRICT THRESHOLD
-    // If the score is below minimum confidence or no keywords matched -> "nothing found"
-    const MINIMUM_CONFIDENCE_THRESHOLD = 0.6;
+    // 1) Minimum BM25 score
+    // 2) At least 40% of the search keywords must be present in the matched chunk
+    const MINIMUM_CONFIDENCE_THRESHOLD = 0.3;
+    const keywordMatchRatio = matchedKeywords.length / queryTokens.length;
 
-    if (!bestChunk || highestScore < MINIMUM_CONFIDENCE_THRESHOLD || matchedKeywords.length === 0) {
+    if (!bestChunk || highestScore < MINIMUM_CONFIDENCE_THRESHOLD || keywordMatchRatio < 0.4) {
         return {
             found: false,
             score: Math.round(highestScore * 100) / 100,
