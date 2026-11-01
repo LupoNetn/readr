@@ -11,3 +11,4 @@ Every full-time employee has access to an annual education stipend of $1,800 for
 
 ## Time Off
 Acme provides 25 days of paid annual leave in addition to statutory public holidays.
+

@@ -1,7 +1,7 @@
 'use client';
 
-import React from 'react';
-import { User, Cpu, FileText, CheckCircle2, ShieldAlert } from 'lucide-react';
+import React, { useState } from 'react';
+import { User, Cpu, FileText, CheckCircle2, ShieldAlert, ChevronDown, ChevronUp, Layers } from 'lucide-react';
 import { ChatMessage } from '../../lib/types';
 
 interface MessageItemProps {
@@ -9,9 +9,11 @@ interface MessageItemProps {
 }
 
 export function MessageItem({ message }: MessageItemProps) {
+    const [showOtherSources, setShowOtherSources] = useState(false);
     const isUser = message.role === 'user';
     const source = message.source;
     const keywords = source?.matchedKeywords || source?.matchedTokens || [];
+    const otherMatches = (message.allMatches || []).slice(1);
 
     return (
         <div className={`py-4 flex space-x-3.5 ${isUser ? 'justify-end' : 'justify-start'}`}>
@@ -82,6 +84,53 @@ export function MessageItem({ message }: MessageItemProps) {
                                                 ))}
                                             </div>
                                         )}
+
+                                        {/* Top-K Toggle for other matching documents */}
+                                        {otherMatches.length > 0 && (
+                                            <button
+                                                onClick={() => setShowOtherSources(!showOtherSources)}
+                                                className="inline-flex items-center space-x-1 px-2 py-1 rounded-md bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 text-[11px] text-neutral-600 dark:text-neutral-400 hover:text-black dark:hover:text-white transition-colors cursor-pointer"
+                                            >
+                                                <Layers className="w-3 h-3 text-neutral-400" />
+                                                <span>{otherMatches.length} more source{otherMatches.length > 1 ? 's' : ''}</span>
+                                                {showOtherSources ? (
+                                                    <ChevronUp className="w-3 h-3 ml-0.5" />
+                                                ) : (
+                                                    <ChevronDown className="w-3 h-3 ml-0.5" />
+                                                )}
+                                            </button>
+                                        )}
+                                    </div>
+                                )}
+
+                                {/* Top-K Multi-Source Drawer for conflicting/alternative sources */}
+                                {otherMatches.length > 0 && showOtherSources && !message.isStreaming && (
+                                    <div className="mt-2.5 pt-2 border-t border-neutral-100 dark:border-neutral-900 space-y-2">
+                                        <p className="text-[11px] font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
+                                            Alternative / Cross-Document Matches:
+                                        </p>
+                                        {otherMatches.map((alt, idx) => (
+                                            <div
+                                                key={idx}
+                                                className="p-2.5 rounded-lg border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-950 text-xs space-y-1.5"
+                                            >
+                                                <div className="flex items-center justify-between">
+                                                    <span className="inline-flex items-center space-x-1.5 font-medium text-neutral-900 dark:text-neutral-100 text-[11px]">
+                                                        <FileText className="w-3 h-3 text-neutral-400" />
+                                                        <span>{alt.filename}</span>
+                                                        <span className="text-[10px] text-neutral-400 font-mono">
+                                                            (chunk {alt.chunkIndex})
+                                                        </span>
+                                                    </span>
+                                                    <span className="text-emerald-700 dark:text-emerald-400 font-mono text-[11px]">
+                                                        {Math.round(alt.confidenceScore * 100)}% match
+                                                    </span>
+                                                </div>
+                                                <p className="text-neutral-700 dark:text-neutral-300 font-sans text-xs italic bg-white dark:bg-neutral-900 p-2 rounded border border-neutral-100 dark:border-neutral-850">
+                                                    "{alt.sourceText}"
+                                                </p>
+                                            </div>
+                                        ))}
                                     </div>
                                 )}
                             </div>

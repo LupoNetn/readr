@@ -3,3 +3,4 @@ In fiscal year 2025, Acme reported an annual recurring revenue of $42.5 million.
 The company employs 150 engineers across three continents.
 Their flagship product is Readr, a deterministic document search engine.
 Acme raised a $12M Series A round led by Horizon Ventures.
+

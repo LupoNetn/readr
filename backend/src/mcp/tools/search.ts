@@ -69,7 +69,14 @@ export function registerSearchTool(server: McpServer): void {
                         chunkIndex: result.match.chunkIndex,
                         sourceText: result.match.text,
                         matchedKeywords: result.match.matchedTokens,
-                        confidenceScore: result.score
+                        confidenceScore: result.score,
+                        allMatches: (result.matches || [result.match]).map(m => ({
+                            filename: m.filename,
+                            chunkIndex: m.chunkIndex,
+                            sourceText: m.text,
+                            matchedKeywords: m.matchedTokens,
+                            confidenceScore: m.confidenceScore
+                        }))
                     }, null, 2)
                 }]
             };

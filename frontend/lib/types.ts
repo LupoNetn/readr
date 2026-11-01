@@ -12,6 +12,7 @@ export interface ChatMessage {
     role: 'user' | 'assistant';
     content: string;
     source?: SourceMatch | null;
+    allMatches?: SourceMatch[];
     isFound?: boolean;
     isStreaming?: boolean;
     timestamp: number;

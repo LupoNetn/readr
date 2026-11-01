@@ -38,9 +38,9 @@ export async function parseFile(buffer: Buffer, filename: string): Promise<Parse
                 header: true,
                 skipEmptyLines: true,
             });
-            // Convert each CSV record into structured key: value lines
+            // Convert each CSV record into clean, readable key: value lines
             text = (parsed.data as Record<string, unknown>[])
-                .map((row, idx) => `Row ${idx + 1}: ` + Object.entries(row).map(([k, v]) => `${k}=${v}`).join(', '))
+                .map((row) => Object.entries(row).map(([k, v]) => `${k}: ${v}`).join(', '))
                 .join('\n');
             break;
         }

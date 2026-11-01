@@ -29,14 +29,18 @@ export interface ChatHistoryItem {
     timestamp: number;
 }
 
+export interface MatchedPassage {
+    filename: string;
+    chunkIndex: number;
+    text: string;
+    matchedTokens: string[];
+    confidenceScore: number;
+}
+
 export interface SearchResult {
     found: boolean;
     score: number;
-    match?: {
-        filename: string;
-        chunkIndex: number;
-        text: string;
-        matchedTokens: string[];
-    };
+    match?: MatchedPassage;
+    matches?: MatchedPassage[];
     message?: string;
 }

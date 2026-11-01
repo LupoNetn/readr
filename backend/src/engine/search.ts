@@ -46,10 +46,13 @@ export function searchDocument(question: string): SearchResult {
         idf[token] = Math.log((totalChunks - matchingChunksCount + 0.5) / (matchingChunksCount + 0.5) + 1);
     }
 
-    // 4. Score every chunk against the query
-    let bestChunk = null;
-    let highestScore = 0;
-    let matchedKeywords: string[] = [];
+    // 4. Score every chunk against the query and filter by strict threshold
+    const MINIMUM_CONFIDENCE_THRESHOLD = 0.3;
+    const candidates: {
+        chunk: (typeof allChunks)[0];
+        score: number;
+        matchedTokens: string[];
+    }[] = [];
 
     for (const chunk of allChunks) {
         let chunkScore = 0;
@@ -70,36 +73,49 @@ export function searchDocument(question: string): SearchResult {
             }
         }
 
-        if (chunkScore > highestScore) {
-            highestScore = chunkScore;
-            bestChunk = chunk;
-            matchedKeywords = currentMatched;
+        const keywordMatchRatio = currentMatched.length / queryTokens.length;
+
+        // Apply strict criteria per candidate chunk:
+        // 1) Minimum BM25 score >= 0.3
+        // 2) At least 40% of the search keywords must be present in this chunk
+        if (chunkScore >= MINIMUM_CONFIDENCE_THRESHOLD && keywordMatchRatio >= 0.4) {
+            candidates.push({
+                chunk,
+                score: Math.round(chunkScore * 100) / 100,
+                matchedTokens: currentMatched
+            });
         }
     }
 
-    // 5. STRICT THRESHOLD
-    // 1) Minimum BM25 score
-    // 2) At least 40% of the search keywords must be present in the matched chunk
-    const MINIMUM_CONFIDENCE_THRESHOLD = 0.3;
-    const keywordMatchRatio = matchedKeywords.length / queryTokens.length;
-
-    if (!bestChunk || highestScore < MINIMUM_CONFIDENCE_THRESHOLD || keywordMatchRatio < 0.4) {
+    // 5. If no chunks met the strict threshold
+    if (candidates.length === 0) {
         return {
             found: false,
-            score: Math.round(highestScore * 100) / 100,
+            score: 0,
             message: "nothing found"
         };
     }
 
+    // 6. Sort qualifying candidates descending by BM25 score
+    candidates.sort((a, b) => b.score - a.score);
+
+    // Extract Top-K passages (up to 5 most relevant passages across documents)
+    const topK = 5;
+    const qualifying = candidates.slice(0, topK);
+
+    const matches = qualifying.map(c => ({
+        filename: c.chunk.filename,
+        chunkIndex: c.chunk.chunkIndex,
+        text: c.chunk.text,
+        matchedTokens: c.matchedTokens,
+        confidenceScore: c.score
+    }));
+
     return {
         found: true,
-        score: Math.round(highestScore * 100) / 100,
-        match: {
-            filename: bestChunk.filename,
-            chunkIndex: bestChunk.chunkIndex,
-            text: bestChunk.text,
-            matchedTokens: matchedKeywords
-        }
+        score: matches[0].confidenceScore,
+        match: matches[0],
+        matches
     };
 }
 

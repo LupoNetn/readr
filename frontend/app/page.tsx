@@ -181,6 +181,7 @@ export default function Home() {
                     role: 'assistant',
                     content: '',
                     source: { ...result.match, sourceText: '' },
+                    allMatches: result.allMatches,
                     isFound: true,
                     isStreaming: true,
                     timestamp: Date.now(),
@@ -210,6 +211,7 @@ export default function Home() {
                                                     ...m,
                                                     content: currentText,
                                                     source: { ...result.match!, sourceText: currentText },
+                                                    allMatches: result.allMatches,
                                                     isStreaming: !isLast,
                                                 }
                                               : m

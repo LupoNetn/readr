@@ -98,7 +98,7 @@ export class McpClientService {
     public static async askDocument(
         question: string,
         onProgress?: (message: string, progress?: number) => void
-    ): Promise<{ found: boolean; match?: SourceMatch; rawText: string }> {
+    ): Promise<{ found: boolean; match?: SourceMatch; allMatches?: SourceMatch[]; rawText: string }> {
         const result = await this.sendJsonRpc(
             'tools/call',
             {
@@ -121,6 +121,7 @@ export class McpClientService {
                 return {
                     found: true,
                     match: parsed as SourceMatch,
+                    allMatches: (parsed.allMatches || [parsed]) as SourceMatch[],
                     rawText: parsed.sourceText,
                 };
             }
