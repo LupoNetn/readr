@@ -39,15 +39,41 @@ export async function parseFile(buffer: Buffer, filename: string): Promise<Parse
                 skipEmptyLines: true,
             });
             // Convert each CSV record into clean, readable key: value lines
+            // Separated by double newlines so each row is an independent, discrete passage
             text = (parsed.data as Record<string, unknown>[])
                 .map((row) => Object.entries(row).map(([k, v]) => `${k}: ${v}`).join(', '))
-                .join('\n');
+                .join('\n\n');
+            break;
+        }
+
+        case '.json': {
+            const raw = buffer.toString('utf-8');
+            try {
+                const parsed = JSON.parse(raw);
+                if (Array.isArray(parsed)) {
+                    // Array of records (e.g. database dump or objects)
+                    text = parsed
+                        .map((item) =>
+                            typeof item === 'object' && item !== null
+                                ? Object.entries(item).map(([k, v]) => `${k}: ${typeof v === 'object' ? JSON.stringify(v) : v}`).join(', ')
+                                : String(item)
+                        )
+                        .join('\n\n');
+                } else if (typeof parsed === 'object' && parsed !== null) {
+                    text = Object.entries(parsed)
+                        .map(([k, v]) => `${k}: ${typeof v === 'object' ? JSON.stringify(v) : v}`)
+                        .join('\n\n');
+                } else {
+                    text = raw;
+                }
+            } catch {
+                text = raw;
+            }
             break;
         }
 
         case '.txt':
-        case '.md':
-        case '.json': {
+        case '.md': {
             text = buffer.toString('utf-8');
             break;
         }

@@ -30,6 +30,7 @@ export function chunkText(text: string, filename: string, documentId: string): D
         .map(b => b.trim())
         .filter(b => b.length > 0);
 
+    const isStructured = filename.endsWith('.csv') || filename.endsWith('.json');
     const passages: string[] = [];
     let pendingPrefix = '';
 
@@ -42,9 +43,11 @@ export function chunkText(text: string, filename: string, documentId: string): D
             pendingPrefix = '';
         }
 
-        // If a block is very short (< 120 chars, e.g. "The Feedback Loop from Hell" or "CHAPTER 4"),
-        // don't leave it alone — fuse it as a heading prefix to the actual explanation paragraph!
-        if (block.length < 120 && i < rawBlocks.length - 1) {
+        // Heading detection (only for prose/documents, never for structured CSV/JSON rows):
+        // A heading is short (< 80 chars), has no terminal punctuation (. ? !), and is 1-2 lines
+        const isHeading = !isStructured && block.length < 80 && !/[.?!]$/.test(block.trim());
+
+        if (isHeading && i < rawBlocks.length - 1) {
             pendingPrefix = block;
             continue;
         }
