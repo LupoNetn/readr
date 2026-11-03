@@ -2,16 +2,10 @@ import { documentStore } from './store.js';
 import { tokenize } from './chunker.js';
 import { SearchResult } from './types.js';
 
-/**
- * Searches stored document chunks using deterministic BM25 ranking.
- * 
- * If no chunk contains matching keywords or the score is below the strict threshold,
- * it returns { found: false, message: "nothing found" }.
- */
+
 export function searchDocument(question: string): SearchResult {
     const queryTokens = tokenize(question);
 
-    // 1. If the question contains no valid keywords
     if (queryTokens.length === 0) {
         return {
             found: false,
@@ -22,7 +16,7 @@ export function searchDocument(question: string): SearchResult {
 
     const allChunks = documentStore.getAllChunks();
 
-    // 2. If no documents exist in the store
+    
     if (allChunks.length === 0) {
         return {
             found: false,
@@ -38,7 +32,7 @@ export function searchDocument(question: string): SearchResult {
     const k1 = 1.5;
     const b = 0.75;
 
-    // 3. Calculate Inverse Document Frequency (IDF) for each query keyword
+    // Calculate Inverse Document Frequency (IDF) for each query keyword
     // Rare words get higher score weight; common words get lower weight
     const idf: Record<string, number> = {};
     for (const token of queryTokens) {
@@ -46,7 +40,7 @@ export function searchDocument(question: string): SearchResult {
         idf[token] = Math.log((totalChunks - matchingChunksCount + 0.5) / (matchingChunksCount + 0.5) + 1);
     }
 
-    // 4. Score every chunk against the query and filter by strict threshold
+    // Score every chunk against the query and filter by strict threshold
     const MINIMUM_CONFIDENCE_THRESHOLD = 0.3;
     const candidates: {
         chunk: (typeof allChunks)[0];
@@ -60,12 +54,10 @@ export function searchDocument(question: string): SearchResult {
         const chunkLen = chunk.tokens.length;
 
         for (const token of queryTokens) {
-            // Count how many times the token appears in this chunk
             const termFreq = chunk.tokens.filter(t => t === token).length;
 
             if (termFreq > 0) {
                 currentMatched.push(token);
-                // BM25 term weighting formula
                 const termScore = (idf[token] * termFreq * (k1 + 1)) /
                     (termFreq + k1 * (1 - b + b * (chunkLen / avgChunkLength)));
 
@@ -75,9 +67,7 @@ export function searchDocument(question: string): SearchResult {
 
         const keywordMatchRatio = currentMatched.length / queryTokens.length;
 
-        // Apply strict criteria per candidate chunk:
-        // 1) Minimum BM25 score >= 0.3
-        // 2) At least 40% of the search keywords must be present in this chunk
+        
         if (chunkScore >= MINIMUM_CONFIDENCE_THRESHOLD && keywordMatchRatio >= 0.4) {
             candidates.push({
                 chunk,
@@ -87,7 +77,7 @@ export function searchDocument(question: string): SearchResult {
         }
     }
 
-    // 5. If no chunks met the strict threshold
+   
     if (candidates.length === 0) {
         return {
             found: false,
@@ -96,10 +86,10 @@ export function searchDocument(question: string): SearchResult {
         };
     }
 
-    // 6. Sort qualifying candidates descending by BM25 score
+    
     candidates.sort((a, b) => b.score - a.score);
 
-    // Extract Top-K passages (up to 5 most relevant passages across documents)
+    
     const topK = 5;
     const qualifying = candidates.slice(0, topK);
 

@@ -37,14 +37,14 @@ export function registerIngestTool(server: McpServer): void {
                     };
                 }
 
-                // 1. Parse raw file
+                
                 const parsed = await parseFile(buffer, filename);
 
-                // 2. Chunk text into semantic units
+                
                 const documentId = `doc_${randomUUID().slice(0, 8)}`;
                 const chunks = chunkText(parsed.text, filename, documentId);
 
-                // 3. Build metadata for Memory Page
+                
                 const meta: DocumentMeta = {
                     id: documentId,
                     filename,
@@ -55,7 +55,7 @@ export function registerIngestTool(server: McpServer): void {
                     preview: parsed.text.slice(0, 150).replace(/\s+/g, ' ').trim()
                 };
 
-                // 4. Save to store (RAM + disk)
+                
                 documentStore.addDocument(meta, chunks);
 
                 return {
