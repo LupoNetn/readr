@@ -9,10 +9,9 @@ interface JsonRpcResponse<T = any> {
     error?: { code: number; message: string; data?: any };
 }
 
-/**
- * Communicates directly with the readr Pure MCP Server over Streamable HTTP (SSE).
- */
+
 export class McpClientService {
+    
     private static async sendJsonRpc<T = any>(
         method: string,
         params: Record<string, any>,
