@@ -9,7 +9,7 @@ interface StoreSchema {
 }
 
 
-class DocumentStore {
+export class DocumentStore {
     private documents: DocumentMeta[] = [];
     private chunks: DocumentChunk[] = [];
     private history: ChatHistoryItem[] = [];
@@ -17,8 +17,8 @@ class DocumentStore {
     // Path where store data will be saved
     private readonly storagePath: string;
 
-    constructor() {
-        this.storagePath = path.resolve(process.cwd(), 'data', 'store.json');
+    constructor(customStoragePath?: string) {
+        this.storagePath = customStoragePath ?? process.env.STORE_PATH ?? path.resolve(process.cwd(), 'data', 'store.json');
         this.loadFromDisk();
     }
 
@@ -122,6 +122,13 @@ class DocumentStore {
 
    
     public clearHistory(): void {
+        this.history = [];
+        this.persist();
+    }
+
+    public clearAll(): void {
+        this.documents = [];
+        this.chunks = [];
         this.history = [];
         this.persist();
     }
